@@ -1,14 +1,13 @@
-import ast
 from collections import deque
 from collections.abc import Iterable
 from functools import singledispatch
 from keyword import kwlist
-import symtable
 from token import NAME, INDENT, OP
 from tokenize import TokenError, tokenize
 
 from .util import debug_time, logger, lines_to_code, code_to_lines
-from .visitor import visitor
+import subprcess
+import tempfile
 
 
 class UnparsableError(Exception):
@@ -87,25 +86,29 @@ class Parser:
         """
         if lines is None:
             lines = code_to_lines(code)
-        try:
-            ast_root, fixed_code, fixed_lines, error = \
-                self._fix_syntax_and_make_ast(code, lines, change_lineno)
-        except SyntaxError as e:
-            # Apparently, fixing syntax errors failed
-            self.syntax_errors.append(e)
-            raise
-        if fixed_code is not None:
-            code = fixed_code
-            lines = fixed_lines
-        try:
-            symtable_root = self._make_symtable(code)
-        except SyntaxError as e:
-            # In some cases, the symtable() call raises a syntax error which
-            # hasn't been raised earlier (such as duplicate arguments)
-            self.syntax_errors.append(e)
-            raise
-        self.syntax_errors.append(error)
-        return visitor(lines, symtable_root, ast_root)
+
+        #FIXME tempfile used - I'm sure there's a more 
+        #      vim way of getting a file from the underlying buffer 
+        with tempfile.TemporaryFile() as tmp_file:
+            self.binary_location = "/home/kamei/projects/rust_projects/denshi-parser/target/release/denshi-parser"
+            self.config_location = "/home/kamei/projects/rust_projects/denshi-parser/Config.toml"
+            args = [self.binary_location, 
+                    tmp_file.name,
+                    self.config_location,
+                    "parse"]
+            popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+            popen.wait()
+            output = popen.stdout.read()
+            
+        nodes = []
+        for line in output:
+            s = line.split(" ")
+            group = s[0]
+            line = int(s[1])
+            start = int(s[2])
+            end = int(s[3])
+            name = s[4]
+            nodes.append(name, line, start, end, group)
 
     @debug_time
     def _fix_syntax_and_make_ast(self, code, lines, change_lineno):
@@ -183,18 +186,6 @@ class Parser:
             # Cut superfluous dot from the end of line
             text = text[:-1]
         return text
-
-    @staticmethod
-    @debug_time
-    def _make_ast(code):
-        """Return AST for code."""
-        return ast.parse(code)
-
-    @staticmethod
-    @debug_time
-    def _make_symtable(code):
-        """Return symtable for code."""
-        return symtable.symtable(code, '?', 'exec')
 
     @staticmethod
     def _minor_change(old_lines, new_lines):
@@ -303,24 +294,6 @@ class Parser:
         if cur_node is None:
             return []
         return self.same_nodes(cur_node, mark_original, use_target)
-
-    def locations_by_node_types(self, types):
-        """Return locations of all AST nodes in code whose type is contained in
-        `types`."""
-        types_set = frozenset(types)
-        try:
-            return self._locations[types_set]
-        except KeyError:
-            pass
-        visitor = _LocationCollectionVisitor(types)
-        try:
-            ast_ = ast.parse(lines_to_code(self.lines))
-        except SyntaxError:
-            return []
-        visitor.visit(ast_)
-        locations = visitor.locations
-        self._locations[types_set] = locations
-        return locations
 
     def locations_by_hl_group(self, group):
         """Return locations of all nodes whose highlight group is `group`."""

@@ -331,26 +331,14 @@ class BufferHandler:
         if what == 'error':
             self._goto_error()
             return
-        # pylint: disable=import-outside-toplevel
-        from ast import ClassDef, FunctionDef, AsyncFunctionDef
-        here = tuple(self._vim.current.window.cursor)
-        if what == 'name':
-            cur_node = self._parser.node_at(here)
-            if cur_node is None:
-                return
-            locs = sorted([n.pos for n in self._parser.same_nodes(
-                cur_node, use_target=self._options.self_to_attribute)])
-        elif what == 'class':
-            locs = self._parser.locations_by_node_types([ClassDef])
-        elif what == 'function':
-            locs = self._parser.locations_by_node_types([FunctionDef,
-                                                         AsyncFunctionDef])
-        elif what in hl_groups:
+        
+        if what in hl_groups:
             locs = self._parser.locations_by_hl_group(hl_groups[what])
         else:
             raise ValueError('"%s" is not a recognized element type.' % what)
         if not locs:
             return
+        
         if direction == 'first':
             new_loc = locs[0]
         elif direction == 'last':

@@ -1,17 +1,19 @@
-hi def semshiLocal           ctermfg=209 guifg=#ff875f
-hi def semshiGlobal          ctermfg=214 guifg=#ffaf00
-hi def semshiImported        ctermfg=214 guifg=#ffaf00 cterm=bold gui=bold
-hi def semshiParameter       ctermfg=75  guifg=#5fafff
-hi def semshiParameterUnused ctermfg=117 guifg=#87d7ff cterm=underline gui=underline
-hi def semshiFree            ctermfg=218 guifg=#ffafd7
-hi def semshiBuiltin         ctermfg=207 guifg=#ff5fff
-hi def semshiAttribute       ctermfg=49  guifg=#00ffaf
-hi def semshiSelf            ctermfg=249 guifg=#b2b2b2
-hi def semshiUnresolved      ctermfg=226 guifg=#ffff00 cterm=underline gui=underline
-hi def semshiSelected        ctermfg=231 guifg=#ffffff ctermbg=161 guibg=#d7005f
+" hi def semshiLocal           ctermfg=209 guifg=#ff875f
+" hi def semshiImported        ctermfg=214 guifg=#ffaf00 cterm=bold gui=bold
+" hi def semshiParameter       ctermfg=75  guifg=#5fafff
+" hi def semshiParameterUnused ctermfg=117 guifg=#87d7ff cterm=underline gui=underline
+" hi def semshiFree            ctermfg=218 guifg=#ffafd7
+" hi def semshiBuiltin         ctermfg=207 guifg=#ff5fff
+" hi def semshiAttribute       ctermfg=49  guifg=#00ffaf
+" hi def semshiSelf            ctermfg=249 guifg=#b2b2b2
+" hi def semshiUnresolved      ctermfg=226 guifg=#ffff00 cterm=underline gui=underline
+" hi def semshiSelected        ctermfg=231 guifg=#ffffff ctermbg=161 guibg=#d7005f
 
-hi def semshiErrorSign       ctermfg=231 guifg=#ffffff ctermbg=160 guibg=#d70000
-hi def semshiErrorChar       ctermfg=231 guifg=#ffffff ctermbg=160 guibg=#d70000
+hi def denshiParameter      ctermfg=75  guifg=#5fafff cterm=underline gui=italic
+hi def denshiKeyword        ctermfg=49  guifg=#00ffaf cterm=bold      gui=underline
+
+hi def semshiErrorSign      ctermfg=231 guifg=#ffffff ctermbg=160 guibg=#d70000
+hi def semshiErrorChar      ctermfg=231 guifg=#ffffff ctermbg=160 guibg=#d70000
 sign define semshiError text=E> texthl=semshiErrorSign
 
 

@@ -118,7 +118,7 @@ class Plugin:
                     sync=True)
     def cmd_semshi(self, args):
         if not args:
-            self.echo('This is semshi.')
+            self.echo('This is denshi.')
             return
         try:
             func = _subcommands[args[0]]
