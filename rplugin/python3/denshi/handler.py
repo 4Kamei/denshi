@@ -157,6 +157,7 @@ class BufferHandler:
             code = self._wait_for(lambda: lines_to_code(self._buf[:]), sync)
         try:
             add, rem = self._parser.parse(code, force)
+            logger.error('Exception: %s %s', add, rem)
         except UnparsableError:
             pass
         else:
@@ -268,6 +269,7 @@ class BufferHandler:
         if not isinstance(node_or_nodes, list):
             buf.add_highlight(*node_or_nodes)
             return
+        
         self._call_atomic_async(
             [('nvim_buf_add_highlight', (buf, *n)) for n in node_or_nodes])
 

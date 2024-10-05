@@ -2,6 +2,8 @@ from collections import deque
 from collections.abc import Iterable
 from functools import singledispatch
 from .util import debug_time, logger, lines_to_code, code_to_lines
+from .node import Node
+
 import subprocess
 import tempfile
 
@@ -85,27 +87,37 @@ class Parser:
 
         #FIXME tempfile used - I'm sure there's a more 
         #      vim way of getting a file from the underlying buffer 
-        with tempfile.TemporaryFile() as tmp_file:
+        with tempfile.NamedTemporaryFile(mode="w+t") as tmp_file:
+            tmp_file.write(code)
+            tmp_file.flush()
+            
+            #tmp_file.seek(0)
+            #assert tmp_file.readlines() != [], "File should be readable"
+    
             self.binary_location = "/home/kamei/projects/rust_projects/denshi-parser/target/release/denshi-parser"
             self.config_location = "/home/kamei/projects/rust_projects/denshi-parser/Config.toml"
             args = [self.binary_location, 
-                    tmp_file.name,
+                    str(tmp_file.name),
                     self.config_location,
                     "parse"]
-            popen = subprocess.Popen(args, stdout=subprocess.PIPE)
+            popen = subprocess.Popen(args, stdout=subprocess.PIPE, text=True)
             popen.wait()
-            output = popen.stdout.read()
-            
+            output = popen.stdout.read()       
+        
         nodes = []
-        for line in output:
+        for line in output.split("\n"):
             s = line.split(" ")
+            if len(s) == 1: #Because s = ['']
+                continue
             group = s[0]
             line = int(s[1])
             start = int(s[2])
             end = int(s[3])
             name = s[4]
-            nodes.append(name, line, start, end, group)
+            nodes.append(Node(name, line, start, end, group))
 
+
+        return nodes
 
     @staticmethod
     def _minor_change(old_lines, new_lines):
@@ -195,7 +207,7 @@ class Parser:
         symtable. In some cases this can be ambiguous.
         """
         if use_target:
-            target = cur_node.target
+            target = cur_node.hl_group
             if target is not None:
                 cur_node = target
         cur_name = cur_node.name
