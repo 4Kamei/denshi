@@ -6,14 +6,13 @@ except ImportError:
     import neovim
 
 from .handler import BufferHandler
-from .node import hl_groups
 
 
 _subcommands = {}
 
 
 def subcommand(func=None, needs_handler=False, silent_fail=True):
-    """Decorator to register `func` as a ":Semshi [...]" subcommand.
+    """Decorator to register `func` as a ":Denshi [...]" subcommand.
 
     If `needs_handler`, the subcommand will fail if no buffer handler is
     currently active. If `silent_fail`, it will fail silently, otherwise an
@@ -29,7 +28,7 @@ def subcommand(func=None, needs_handler=False, silent_fail=True):
             self._init_with_vim()
         if needs_handler and self._cur_handler is None:
             if not silent_fail:
-                self.echo_error('Semshi is not enabled in this buffer!')
+                self.echo_error('Denshi is not enabled in this buffer!')
             return
         func(self, *args, **kwargs)
     _subcommands[func.__name__] = wrapper
@@ -38,10 +37,10 @@ def subcommand(func=None, needs_handler=False, silent_fail=True):
 
 @neovim.plugin
 class Plugin:
-    """Semshi Neovim plugin.
+    """Denshi Neovim plugin.
 
     The plugin handles vim events and commands, and delegates them to a buffer
-    handler. (Each buffer is handled by a semshi.BufferHandler instance.)
+    handler. (Each buffer is handled by a denshi.BufferHandler instance.)
     """
 
     def __init__(self, vim):
@@ -70,7 +69,7 @@ class Plugin:
 
     # Must not be async here because we have to make sure that switching the
     # buffer handler is completed before other events are handled.
-    @neovim.function('SemshiBufEnter', sync=True)
+    @neovim.function('DenshiBufEnter', sync=True)
     def event_buf_enter(self, args):
         buf_num, view_start, view_stop = args
         self._select_handler(buf_num)
@@ -78,20 +77,20 @@ class Plugin:
         self._cur_handler.update()
         self._mark_selected()
 
-    @neovim.function('SemshiBufLeave', sync=True)
+    @neovim.function('DenshiBufLeave', sync=True)
     def event_buf_leave(self, _):
         self._cur_handler = None
 
-    @neovim.function('SemshiBufWipeout', sync=True)
+    @neovim.function('DenshiBufWipeout', sync=True)
     def event_buf_wipeout(self, args):
         self._remove_handler(args[0])
 
-    @neovim.function('SemshiVimResized', sync=False)
+    @neovim.function('DenshiVimResized', sync=False)
     def event_vim_resized(self, args):
         self._update_viewport(*args)
         self._mark_selected()
 
-    @neovim.function('SemshiCursorMoved', sync=False)
+    @neovim.function('DenshiCursorMoved', sync=False)
     def event_cursor_moved(self, args):
         if self._cur_handler is None:
             # CursorMoved may trigger before BufEnter, so select the buffer if
@@ -101,7 +100,7 @@ class Plugin:
         self._update_viewport(*args)
         self._mark_selected()
 
-    @neovim.function('SemshiTextChanged', sync=False)
+    @neovim.function('DenshiTextChanged', sync=False)
     def event_text_changed(self, _):
         if self._cur_handler is None:
             return
@@ -114,9 +113,9 @@ class Plugin:
         for handler in self._handlers.values():
             handler.shutdown()
 
-    @neovim.command('Semshi', nargs='*', complete='customlist,SemshiComplete',
+    @neovim.command('Denshi', nargs='*', complete='customlist,DenshiComplete',
                     sync=True)
-    def cmd_semshi(self, args):
+    def cmd_denshi(self, args):
         if not args:
             self.echo('This is denshi.')
             return
@@ -128,12 +127,12 @@ class Plugin:
         func(self, *args[1:])
 
     @staticmethod
-    @neovim.function('SemshiComplete', sync=True)
+    @neovim.function('DenshiComplete', sync=True)
     def func_complete(arg):
         lead, *_ = arg
         return [c for c in _subcommands if c.startswith(lead)]
 
-    @neovim.function('SemshiInternalEval', sync=True)
+    @neovim.function('DenshiInternalEval', sync=True)
     def _internal_eval(self, args):
         """Eval Python code in plugin context.
 
@@ -236,15 +235,15 @@ class Plugin:
         self._cur_handler.mark_selected(self._vim.current.window.cursor)
 
     def _attach_listeners(self):
-        self._vim.call('semshi#buffer_attach')
+        self._vim.call('denshi#buffer_attach')
 
     def _detach_listeners(self):
-        self._vim.call('semshi#buffer_detach')
+        self._vim.call('denshi#buffer_detach')
 
     def _listeners_attached(self):
         """Return whether event listeners are attached to the current buffer.
         """
-        return self._vim.eval('get(b:, "semshi_attached", v:false)')
+        return self._vim.eval('get(b:, "denshi_attached", v:false)')
 
 
 class Options:
@@ -253,8 +252,8 @@ class Options:
     The options will only be read and set once on init.
     """
     _defaults = {
-        'filetypes': ['python'],
-        'excluded_hl_groups': ['local'],
+        'filetypes': ['verilog', 'systemverilog'],
+        'excluded_hl_groups': [],
         'mark_selected_nodes': 1,
         'no_default_builtin_highlight': True,
         'simplify_markup': True,
@@ -268,9 +267,9 @@ class Options:
 
     def __init__(self, vim):
         for key, val_default in Options._defaults.items():
-            val = vim.vars.get('semshi#' + key, val_default)
+            val = vim.vars.get('denshi#' + key, val_default)
             # vim.vars doesn't support setdefault(), so set value manually
-            vim.vars['semshi#' + key] = val
+            vim.vars['denshi#' + key] = val
             try:
                 converter = getattr(Options, '_convert_' + key)
             except AttributeError:
@@ -278,11 +277,3 @@ class Options:
             else:
                 val = converter(val)
             setattr(self, key, val)
-
-    @staticmethod
-    def _convert_excluded_hl_groups(items):
-        try:
-            return [hl_groups[g] for g in items]
-        except KeyError as e:
-            # TODO Use err_write instead?
-            raise Exception('"%s" is an unknown highlight group.' % e.args[0])

@@ -1,12 +1,8 @@
 from collections import deque
 from collections.abc import Iterable
 from functools import singledispatch
-from keyword import kwlist
-from token import NAME, INDENT, OP
-from tokenize import TokenError, tokenize
-
 from .util import debug_time, logger, lines_to_code, code_to_lines
-import subprcess
+import subprocess
 import tempfile
 
 
@@ -110,82 +106,6 @@ class Parser:
             name = s[4]
             nodes.append(name, line, start, end, group)
 
-    @debug_time
-    def _fix_syntax_and_make_ast(self, code, lines, change_lineno):
-        """Try to fix syntax errors in code (if present) and return AST, fixed
-        code and list of fixed lines of code.
-
-        Current strategy to fix syntax errors:
-        - Try to build AST from original code.
-        - If that fails, call _fix_line() on the line indicated by the
-          SyntaxError exception and try to build AST again.
-        - If that fails, do the same with the line of the last change.
-        - If all attempts failed, raise original SyntaxError exception.
-        """
-        # TODO Cache previous attempt?
-        try:
-            return self._make_ast(code), None, None, None
-        except SyntaxError as e:
-            orig_error = e
-            error_idx = e.lineno - 1
-        if not self._fix_syntax:
-            # Don't even attempt to fix syntax errors.
-            raise orig_error
-        new_lines = lines[:]
-        # Save original line to restore later
-        orig_line = new_lines[error_idx]
-        new_lines[error_idx] = self._fix_line(orig_line)
-        new_code = lines_to_code(new_lines)
-        try:
-            ast_root = self._make_ast(new_code)
-        except SyntaxError:
-            # Restore original line
-            new_lines[error_idx] = orig_line
-            # Fixing the line of the syntax error failed, so try again with the
-            # line of last change.
-            if change_lineno is None or change_lineno == error_idx:
-                # Don't try to fix the changed line if it's unknown or the same
-                # as the one we tried to fix before.
-                raise orig_error
-            new_lines[change_lineno] = self._fix_line(new_lines[change_lineno])
-            new_code = lines_to_code(new_lines)
-            try:
-                ast_root = self._make_ast(new_code)
-            except SyntaxError:
-                # All fixing attempts failed, so raise original syntax error.
-                raise orig_error
-        return ast_root, new_code, new_lines, orig_error
-
-    @staticmethod
-    def _fix_line(line):
-        """Take a line of code which may have introduced a syntax error and
-        return a modified version which is less likely to cause a syntax error.
-        """
-        tokens = tokenize(iter([line.encode('utf-8')]).__next__)
-        prev = None
-        text = ''
-        def add_token(token, filler):
-            nonlocal text, prev
-            text += (token.start[1] - len(text)) * filler + token.string
-            prev = token
-        try:
-            for token in tokens:
-                if token.type == INDENT:
-                    text += token.string
-                elif (token.type == OP and token.string == '.' and prev and
-                      prev.type == NAME):
-                    add_token(token, ' ')
-                elif token.type == NAME and token.string not in kwlist:
-                    if prev and prev.type == OP and prev.string == '.':
-                        add_token(token, ' ')
-                    else:
-                        add_token(token, '+')
-        except TokenError as e:
-            logger.debug('token error %s', e)
-        if prev and prev.type == OP and prev.string == '.':
-            # Cut superfluous dot from the end of line
-            text = text[:-1]
-        return text
 
     @staticmethod
     def _minor_change(old_lines, new_lines):
@@ -299,15 +219,3 @@ class Parser:
         """Return locations of all nodes whose highlight group is `group`."""
         return [n.pos for n in self._nodes if n.hl_group == group]
 
-
-class _LocationCollectionVisitor(ast.NodeVisitor):
-    """Node vistor which collects the locations of all AST nodes of a given
-    type."""
-    def __init__(self, types):
-        self._types = types
-        self.locations = []
-
-    def visit(self, node):
-        if type(node) in self._types: # pylint: disable=unidiomatic-typecheck
-            self.locations.append((node.lineno, node.col_offset))
-        return self.generic_visit(node)

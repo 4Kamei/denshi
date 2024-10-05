@@ -5,17 +5,17 @@ from textwrap import dedent
 
 import pytest
 
-from semshi import parser
-from semshi.node import (ATTRIBUTE, BUILTIN, FREE, GLOBAL, IMPORTED, LOCAL,
+from denshi import parser
+from denshi.node import (ATTRIBUTE, BUILTIN, FREE, GLOBAL, IMPORTED, LOCAL,
                          PARAMETER, PARAMETER_UNUSED, SELF, UNRESOLVED, Node,
                          group)
-from semshi.parser import Parser, UnparsableError
+from denshi.parser import Parser, UnparsableError
 
 from .conftest import make_parser, make_tree, parse
 
 
 def test_group():
-    assert group('foo') == 'semshiFoo'
+    assert group('foo') == 'denshiFoo'
 
 
 def test_basic_name():

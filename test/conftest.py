@@ -1,7 +1,7 @@
 import ast
 from textwrap import dedent
 
-from semshi.parser import Parser
+from denshi.parser import Parser
 
 
 def make_tree(names):

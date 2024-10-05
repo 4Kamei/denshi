@@ -3,13 +3,13 @@ from setuptools import setup
 # The setup is currently only used for tests. See the README for installation
 # instructions in Neovim.
 setup(
-    name='semshi',
+    name='denshi',
     description='Semantic Highlighting for Python in Neovim',
-    packages=['semshi'],
+    packages=['denshi'],
     author='numirias',
     author_email='numirias@users.noreply.github.com',
     version='0.1.0',
-    url='https://github.com/numirias/semshi',
+    url='https://github.com/numirias/denshi',
     license='MIT',
     python_requires='>=3',
     install_requires=[

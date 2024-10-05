@@ -9,7 +9,7 @@ except ImportError:
 
 from .parser import Parser, UnparsableError
 from .util import logger, debug_time, lines_to_code
-from .node import Node, SELECTED, hl_groups
+from .node import Node, SELECTED
 
 
 ERROR_SIGN_ID = 314000
@@ -233,10 +233,10 @@ class BufferHandler:
         self._wrap_async(self._buf.clear_highlight)(ERROR_HL_ID)
         if error is None:
             return
-        self._place_sign(ERROR_SIGN_ID, error.lineno, 'semshiError')
+        self._place_sign(ERROR_SIGN_ID, error.lineno, 'denshiError')
         lineno, offset = self._error_pos(error)
         self._wrap_async(self._buf.add_highlight)(
-            'semshiErrorChar',
+            'denshiErrorChar',
             lineno - 1,
             offset,
             offset + 1,
@@ -332,10 +332,8 @@ class BufferHandler:
             self._goto_error()
             return
         
-        if what in hl_groups:
-            locs = self._parser.locations_by_hl_group(hl_groups[what])
-        else:
-            raise ValueError('"%s" is not a recognized element type.' % what)
+        locs = self._parser.locations_by_hl_group(what)
+        
         if not locs:
             return
         

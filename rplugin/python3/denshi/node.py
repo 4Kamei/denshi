@@ -2,17 +2,7 @@ import builtins
 from itertools import count
 
 
-hl_groups = {}
-
-def group(s):
-    label = 'semshi' + s[0].capitalize() + s[1:]
-    hl_groups[s] = label
-    return label
-
-
-
-UNRESOLVED = group('unresolved')
-PARAMETER = group('parameter')
+SELECTED = 'denshiSelected'
 
 more_builtins = {'__file__', '__path__', '__cached__'}
 builtins = set(vars(builtins)) | more_builtins

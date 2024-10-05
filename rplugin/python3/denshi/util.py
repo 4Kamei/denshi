@@ -38,14 +38,14 @@ def debug_time(label_or_callable=None, detail=None):
 
 
 def make_logger():
-    logger = logging.getLogger('semshi')
+    logger = logging.getLogger('denshi')
     logger.setLevel(logging.ERROR)
-    log_file = os.environ.get('SEMSHI_LOG_FILE')
+    log_file = os.environ.get('DENSHI_LOG_FILE')
     if log_file:
         handler = logging.FileHandler(log_file)
-        logger.setLevel(os.environ.get('SEMSHI_LOG_LEVEL', logging.ERROR))
+        logger.setLevel(os.environ.get('DENSHI_LOG_LEVEL', logging.ERROR))
         logger.addHandler(handler)
-    logger.debug('Semshi logger started.')
+    logger.debug('Denshi logger started.')
     return logger
 
 

@@ -1,5 +1,5 @@
 import os
-from semshi.parser import UnparsableError
+from denshi.parser import UnparsableError
 
 import pytest
 
