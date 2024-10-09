@@ -47,9 +47,10 @@ class Node:
     def __repr__(self):
         return '<%s %s %s (%s, %s) %d>' % (
             self.name,
-            self.hl_group[6:],  
+            self.hl_group,  
             self.lineno,
             self.col,
+            self.end,
             self.id,
         )
 

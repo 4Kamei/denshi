@@ -6,7 +6,7 @@ from .node import Node
 
 import subprocess
 import tempfile
-
+from threading import Lock
 
 class UnparsableError(Exception):
 
@@ -20,7 +20,7 @@ class Parser:
     run of `parse()` on changed source code, it returns the nodes that have
     been added and removed.
     """
-    def __init__(self, exclude=None, fix_syntax=True):
+    def __init__(self, config_location, binary_location, exclude=None, fix_syntax=True):
         self._excluded = exclude or []
         self._fix_syntax = fix_syntax
         self._locations = {}
@@ -28,6 +28,10 @@ class Parser:
         self.lines = []
         # Incremented after every parse call
         self.tick = 0
+        self.parse_lock = Lock()
+    
+        self.binary_location = binary_location
+        self.config_location = config_location
         # Holds the error of the current and previous run, so the buffer
         # handler knows if error signs need to be updated.
         self.syntax_errors = deque([None, None], maxlen=2)
@@ -53,24 +57,29 @@ class Parser:
         return [n for n in nodes if n.hl_group not in self._excluded]
 
     def _parse(self, code, force=False):
-        """Parse code and return tuple (`add`, `remove`) of added and removed
-        nodes since last run. With `force`, all highlights are refreshed, even
-        those that didn't change.
-        """
-        self._locations.clear()
-        old_lines = self.lines
-        new_lines = code_to_lines(code)
-        minor_change, change_lineno = self._minor_change(old_lines, new_lines)
-        old_nodes = self._nodes
-        new_nodes = self._make_nodes(code, new_lines, change_lineno)
-        # Detecting minor changes keeps us from updating a lot of highlights
-        # while the user is only editing a single line.
-        if minor_change and not force:
-            add, rem, keep = self._diff(old_nodes, new_nodes)
-            self._nodes = keep + add
-        else:
-            add, rem = new_nodes, old_nodes
-            self._nodes = add
+        
+        with self.parse_lock:
+            """Parse code and return tuple (`add`, `remove`) of added and removed
+            nodes since last run. With `force`, all highlights are refreshed, even
+            those that didn't change.
+            """
+            self._locations.clear()
+            old_lines = self.lines
+            new_lines = code_to_lines(code)
+            minor_change, change_lineno = self._minor_change(old_lines, new_lines)
+            old_nodes = self._nodes
+            
+
+            new_nodes = self._make_nodes(code, new_lines, change_lineno)
+            # Detecting minor changes keeps us from updating a lot of highlights
+            # while the user is only editing a single line.
+            if minor_change and not force:
+                add, rem, keep = self._diff(old_nodes, new_nodes)
+                self._nodes = keep + add
+            else:
+                add, rem = new_nodes, old_nodes
+                self._nodes = add
+
         # Only assign new lines when nodes have been updated accordingly
         self.lines = new_lines
         logger.debug('[%d] nodes: +%d,  -%d', self.tick, len(add), len(rem))
@@ -93,17 +102,19 @@ class Parser:
             
             #tmp_file.seek(0)
             #assert tmp_file.readlines() != [], "File should be readable"
-    
-            self.binary_location = "/home/kamei/projects/rust_projects/denshi-parser/target/release/denshi-parser"
-            self.config_location = "/home/kamei/projects/rust_projects/denshi-parser/Config.toml"
             args = [self.binary_location, 
                     str(tmp_file.name),
                     self.config_location,
                     "parse"]
-            popen = subprocess.Popen(args, stdout=subprocess.PIPE, text=True)
+    
+   
+            popen = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             popen.wait()
             output = popen.stdout.read()       
-        
+            err_out = popen.stderr.read()
+
+        assert err_out == "", f"Parser return errors: Parser output: \n{err_out}  \nCalled with: {str(args)}"
+  
         nodes = []
         for line in output.split("\n"):
             s = line.split(" ")
@@ -115,7 +126,6 @@ class Parser:
             end = int(s[3])
             name = s[4]
             nodes.append(Node(name, line, start, end, group))
-
 
         return nodes
 

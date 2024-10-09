@@ -1,17 +1,3 @@
-" hi def denshiImported        ctermfg=214 guifg=#ffaf00 cterm=bold gui=bold
-" hi def denshiParameter       ctermfg=75  guifg=#5fafff
-" hi def denshiParameterUnused ctermfg=117 guifg=#87d7ff cterm=underline gui=underline
-" hi def denshiFree            ctermfg=218 guifg=#ffafd7
-" hi def denshiBuiltin         ctermfg=207 guifg=#ff5fff
-" hi def denshiSelf            ctermfg=249 guifg=#b2b2b2
-" hi def denshiUnresolved      ctermfg=226 guifg=#ffff00 cterm=underline gui=underline
-" hi def denshiSelected        ctermfg=231 guifg=#ffffff ctermbg=161 guibg=#d7005f
-
-hi def denshiParameter          ctermfg=75  guifg=#5fafff                 gui=italic
-hi def denshiVariable           ctermfg=75  guifg=#5fafff                           
-hi def denshiIdentifier         ctermfg=209 guifg=#ff875f
-hi def denshiKeyword            ctermfg=49  guifg=#00ffaf cterm=bold
-hi def denshiBlockIdentifier    ctermfg=49  guifg=#00ffaf
 
 hi def denshiErrorSign          ctermfg=231 guifg=#ffffff ctermbg=160 guibg=#d70000
 hi def denshiErrorChar          ctermfg=231 guifg=#ffffff ctermbg=160 guibg=#d70000
@@ -20,7 +6,7 @@ sign define denshiError text=E> texthl=denshiErrorSign
 
 " These options can't be initialized in the Python plugin since they must be
 " known immediately.
-let g:denshi#filetypes = get(g:, 'denshi#filetypes', ['python'])
+let g:denshi#filetypes = get(g:, 'denshi#filetypes', ['verilog', 'systemverilog'])
 let g:denshi#simplify_markup = get(g:, 'denshi#simplify_markup', v:true)
 let g:denshi#no_default_builtin_highlight = get(g:, 'denshi#no_default_builtin_highlight', v:true)
 

@@ -27,7 +27,9 @@ class BufferHandler:
         self._vim = vim
         self._options = options
         self._buf_num = buf.number
-        self._parser = Parser(options.excluded_hl_groups,
+        self._parser = Parser(self._options.config_location,
+                              self._options.binary_location,
+                              options.excluded_hl_groups,
                               options.tolerate_syntax_errors)
         self._scheduled = False
         self._viewport_changed = False
@@ -269,13 +271,14 @@ class BufferHandler:
         if not isinstance(node_or_nodes, list):
             buf.add_highlight(*node_or_nodes)
             return
-        
+
         self._call_atomic_async(
             [('nvim_buf_add_highlight', (buf, *n)) for n in node_or_nodes])
 
     @debug_time(None, lambda _, nodes: '%d nodes' % len(nodes))
     def _clear_hls(self, node_or_nodes):
         buf = self._buf
+                
         if not node_or_nodes:
             return
         if not isinstance(node_or_nodes, list):

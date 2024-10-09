@@ -7,6 +7,7 @@ except ImportError:
 
 from .handler import BufferHandler
 
+import subprocess
 
 _subcommands = {}
 
@@ -143,6 +144,7 @@ class Plugin:
     @subcommand
     def enable(self):
         self._attach_listeners()
+        self._set_hl_groups()
         self._select_handler(self._vim.current.buffer)
         self._update_viewport(*self._vim.eval('[line("w0"), line("w$")]'))
         self.highlight()
@@ -195,6 +197,31 @@ class Plugin:
                 handlers=self._handlers
             )
         )
+
+    def _set_hl_groups(self):
+        args = [
+            self._options.binary_location,
+            "<placeholder>",
+            self._options.config_location,
+            "colors"
+        ]
+        
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, text=True)
+        proc.wait()
+        output = proc.stdout.read()
+        
+        
+        commands = []
+        for line in output.split("\n"):
+            split = line.split(" ")
+            if len(split) < 2:
+                continue
+            group = split[0]
+            remainder = " ".join(split[1::])
+            commands.append(f"hi def {group} {remainder}")
+
+        for c in commands:
+            self._vim.command(c)
 
     def _select_handler(self, buf_or_buf_num):
         """Select handler for `buf_or_buf_num`."""
@@ -254,7 +281,7 @@ class Options:
     _defaults = {
         'filetypes': ['verilog', 'systemverilog'],
         'excluded_hl_groups': [],
-        'mark_selected_nodes': 1,
+        'mark_selected_nodes': 0,
         'no_default_builtin_highlight': True,
         'simplify_markup': True,
         'error_sign': True,
@@ -263,6 +290,8 @@ class Options:
         'tolerate_syntax_errors': True,
         'update_delay_factor': .0,
         'self_to_attribute': True,
+        'binary_location': "/home/kamei/projects/rust_projects/denshi-parser/target/release/denshi-parser",
+        'config_location': "/home/kamei/.dotfiles/nvim/denshi-parser-config.toml"
     }
 
     def __init__(self, vim):
